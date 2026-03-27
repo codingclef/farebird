@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'screens/auth/auth_screen.dart' show LoginScreen, RegisterScreen;
 import 'screens/search/search_screen.dart';
 import 'screens/monitor/monitor_screen.dart';
 import 'screens/settings/settings_screen.dart';
+import 'services/auth_service.dart';
 
 void main() {
   runApp(const ProviderScope(child: FareBirdApp()));
@@ -19,7 +21,40 @@ class FareBirdApp extends StatelessWidget {
         colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xFF1A73E8)),
         useMaterial3: true,
       ),
-      home: const MainScreen(),
+      home: const SplashRouter(),
+      routes: {
+        '/home': (context) => const MainScreen(),
+        '/auth': (context) => const LoginScreen(),
+        '/register': (context) => const RegisterScreen(),
+      },
+    );
+  }
+}
+
+class SplashRouter extends StatefulWidget {
+  const SplashRouter({super.key});
+
+  @override
+  State<SplashRouter> createState() => _SplashRouterState();
+}
+
+class _SplashRouterState extends State<SplashRouter> {
+  @override
+  void initState() {
+    super.initState();
+    _route();
+  }
+
+  Future<void> _route() async {
+    final loggedIn = await AuthService().isLoggedIn();
+    if (!mounted) return;
+    Navigator.of(context).pushReplacementNamed(loggedIn ? '/home' : '/auth');
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return const Scaffold(
+      body: Center(child: CircularProgressIndicator()),
     );
   }
 }

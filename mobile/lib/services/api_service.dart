@@ -1,13 +1,24 @@
 import 'package:dio/dio.dart';
+import 'auth_service.dart';
 
 class ApiService {
   static const String _baseUrl = 'http://localhost:8000/api/v1';
 
-  final Dio _dio = Dio(BaseOptions(
+  final _authService = AuthService();
+
+  late final Dio _dio = Dio(BaseOptions(
     baseUrl: _baseUrl,
     connectTimeout: const Duration(seconds: 10),
     receiveTimeout: const Duration(seconds: 30),
-  ));
+  ))..interceptors.add(InterceptorsWrapper(
+      onRequest: (options, handler) async {
+        final token = await _authService.getToken();
+        if (token != null) {
+          options.headers['Authorization'] = 'Bearer $token';
+        }
+        handler.next(options);
+      },
+    ));
 
   // 항공권 검색
   Future<Map<String, dynamic>> searchFlights({

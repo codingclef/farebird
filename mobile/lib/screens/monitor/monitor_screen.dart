@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
 import '../../models/flight.dart';
 import '../../services/api_service.dart';
+import '../../services/auth_service.dart';
 
 final _apiService = ApiService();
-const _tempUserId = 1; // 로그인 기능 추가 전 임시 사용자 ID
+final _authService = AuthService();
 
 class MonitorScreen extends StatefulWidget {
   const MonitorScreen({super.key});
@@ -23,15 +24,19 @@ class _MonitorScreenState extends State<MonitorScreen> {
   }
 
   Future<void> _loadRoutes() async {
+    if (!mounted) return;
     setState(() => _loading = true);
     try {
-      final data = await _apiService.getWatches(_tempUserId);
+      final userId = await _authService.getUserId();
+      if (userId == null) return;
+      final data = await _apiService.getWatches(userId);
+      if (!mounted) return;
       setState(() {
         _routes = data.map((e) => WatchedRoute.fromJson(e)).toList();
       });
     } catch (_) {
     } finally {
-      setState(() => _loading = false);
+      if (mounted) setState(() => _loading = false);
     }
   }
 
@@ -88,8 +93,10 @@ class _MonitorScreenState extends State<MonitorScreen> {
             ),
             FilledButton(
               onPressed: () async {
+                final userId = await _authService.getUserId();
+                if (userId == null) return;
                 await _apiService.addWatch(
-                  userId: _tempUserId,
+                  userId: userId,
                   origin: originCtrl.text.toUpperCase(),
                   destination: destCtrl.text.toUpperCase(),
                   departMonth: monthCtrl.text,
