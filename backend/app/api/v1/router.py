@@ -1,5 +1,6 @@
 from fastapi import APIRouter
-from app.api.v1.routes import flights
+from app.api.v1.routes import flights, watch
 
 router = APIRouter(prefix="/api/v1")
 router.include_router(flights.router)
+router.include_router(watch.router)
