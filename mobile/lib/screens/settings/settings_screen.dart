@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../../services/auth_service.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -84,6 +85,17 @@ class _SettingsScreenState extends State<SettingsScreen> {
             leading: Icon(Icons.info_outline),
             title: Text('버전'),
             trailing: Text('1.0.0'),
+          ),
+          const Divider(height: 48),
+          OutlinedButton.icon(
+            onPressed: () async {
+              await AuthService().logout();
+              if (context.mounted) {
+                Navigator.of(context).pushReplacementNamed('/auth');
+              }
+            },
+            icon: const Icon(Icons.logout, color: Colors.red),
+            label: const Text('로그아웃', style: TextStyle(color: Colors.red)),
           ),
         ],
       ),
