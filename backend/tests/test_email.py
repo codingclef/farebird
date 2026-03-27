@@ -16,13 +16,13 @@ class TestGenerateCode:
 
 
 class TestSendVerificationEmail:
-    def test_logs_code_when_no_api_key(self, caplog):
-        import logging
+    def test_prints_code_when_no_api_key(self, capsys):
         with patch("app.core.email.settings") as mock_settings:
             mock_settings.SENDGRID_API_KEY = ""
-            with caplog.at_level(logging.INFO, logger="app.core.email"):
-                send_verification_email("test@example.com", "123456")
-        assert "123456" in caplog.text
+            send_verification_email("test@example.com", "123456")
+        output = capsys.readouterr().out
+        assert "123456" in output
+        assert "test@example.com" in output
 
     def test_calls_sendgrid_when_api_key_set(self):
         with patch("app.core.email.settings") as mock_settings:
