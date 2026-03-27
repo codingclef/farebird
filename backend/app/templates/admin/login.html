@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <title>FareBird Admin · 로그인</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: -apple-system, BlinkMacSystemFont, sans-serif; background: #f5f6fa; display: flex; align-items: center; justify-content: center; min-height: 100vh; }
+    .card { background: #fff; border-radius: 12px; padding: 40px; width: 360px; box-shadow: 0 4px 20px rgba(0,0,0,0.1); }
+    .logo { text-align: center; font-size: 22px; font-weight: 700; margin-bottom: 8px; }
+    .logo span { color: #1A73E8; }
+    .sub { text-align: center; color: #888; font-size: 13px; margin-bottom: 32px; }
+    label { display: block; font-size: 13px; font-weight: 600; margin-bottom: 6px; color: #555; }
+    input { width: 100%; padding: 10px 14px; border: 1px solid #ddd; border-radius: 8px; font-size: 14px; margin-bottom: 16px; outline: none; }
+    input:focus { border-color: #1A73E8; }
+    button { width: 100%; padding: 12px; background: #1A73E8; color: #fff; border: none; border-radius: 8px; font-size: 15px; font-weight: 600; cursor: pointer; }
+    button:hover { background: #1557b0; }
+    .error { background: #fce8e6; color: #c5221f; padding: 10px 14px; border-radius: 8px; font-size: 13px; margin-bottom: 16px; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <div class="logo">🐦 Fare<span>Bird</span></div>
+    <div class="sub">어드민 페이지</div>
+    {% if error %}
+    <div class="error">{{ error }}</div>
+    {% endif %}
+    <form method="post" action="/admin/login">
+      <label>이메일</label>
+      <input type="email" name="email" required autofocus>
+      <label>비밀번호</label>
+      <input type="password" name="password" required>
+      <button type="submit">로그인</button>
+    </form>
+  </div>
+</body>
+</html>

@@ -1,0 +1,31 @@
+{% extends "admin/base.html" %}
+{% block content %}
+<div class="card">
+  <table>
+    <thead>
+      <tr>
+        <th>ID</th>
+        <th>유저 이메일</th>
+        <th>노선</th>
+        <th>여행 월</th>
+        <th>알림 기준</th>
+        <th>상태</th>
+        <th>등록일</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for route in routes %}
+      <tr>
+        <td>{{ route.id }}</td>
+        <td>{{ route.user.email }}</td>
+        <td>{{ route.origin }} → {{ route.destination }}</td>
+        <td>{{ route.depart_month }}</td>
+        <td>{{ route.alert_threshold | int }}% 이상</td>
+        <td><span class="badge {{ 'active' if route.is_active else 'inactive' }}">{{ '활성' if route.is_active else '비활성' }}</span></td>
+        <td>{{ route.created_at.strftime('%Y-%m-%d %H:%M') }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

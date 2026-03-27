@@ -15,6 +15,7 @@ class User(Base):
     notify_push = Column(Boolean, default=True)      # 푸시 알림 여부
     notify_email = Column(Boolean, default=True)     # 이메일 알림 여부
     is_active = Column(Boolean, default=True)
+    is_admin = Column(Boolean, default=False)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 
     watched_routes = relationship("WatchedRoute", back_populates="user")
