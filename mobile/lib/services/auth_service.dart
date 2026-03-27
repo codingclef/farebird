@@ -30,6 +30,17 @@ class AuthService {
     await prefs.remove(_keyUserId);
   }
 
+  Future<void> deleteAccount(String password) async {
+    final token = await getToken();
+    if (token == null) throw Exception('Not logged in');
+    await _dio.delete(
+      '/auth/me',
+      queryParameters: {'password': password},
+      options: Options(headers: {'Authorization': 'Bearer $token'}),
+    );
+    await logout();
+  }
+
   Future<String?> getToken() async {
     final prefs = await SharedPreferences.getInstance();
     return prefs.getString(_keyToken);

@@ -29,6 +29,63 @@ class _SettingsScreenState extends State<SettingsScreen> {
     });
   }
 
+  Future<void> _showDeleteAccountDialog() async {
+    final passwordCtrl = TextEditingController();
+    bool obscure = true;
+    String? error;
+
+    await showDialog(
+      context: context,
+      builder: (context) => StatefulBuilder(
+        builder: (context, setDialogState) => AlertDialog(
+          title: const Text('회원 탈퇴'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text('탈퇴하면 모든 데이터가 삭제되며 복구할 수 없습니다.\n비밀번호를 입력해 확인해주세요.'),
+              const SizedBox(height: 16),
+              TextField(
+                controller: passwordCtrl,
+                obscureText: obscure,
+                decoration: InputDecoration(
+                  labelText: '비밀번호',
+                  border: const OutlineInputBorder(),
+                  suffixIcon: IconButton(
+                    icon: Icon(obscure ? Icons.visibility_outlined : Icons.visibility_off_outlined),
+                    onPressed: () => setDialogState(() => obscure = !obscure),
+                  ),
+                  errorText: error,
+                ),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('취소'),
+            ),
+            TextButton(
+              onPressed: () async {
+                try {
+                  await AuthService().deleteAccount(passwordCtrl.text);
+                  if (context.mounted) Navigator.pop(context, true);
+                } catch (_) {
+                  setDialogState(() => error = '비밀번호가 올바르지 않습니다.');
+                }
+              },
+              child: const Text('탈퇴', style: TextStyle(color: Colors.red)),
+            ),
+          ],
+        ),
+      ),
+    ).then((result) {
+      if (result == true && mounted) {
+        Navigator.of(context).pushReplacementNamed('/auth');
+      }
+    });
+  }
+
   Future<void> _saveSettings() async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString('email', _emailController.text);
@@ -96,6 +153,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
             },
             icon: const Icon(Icons.logout, color: Colors.red),
             label: const Text('로그아웃', style: TextStyle(color: Colors.red)),
+          ),
+          const SizedBox(height: 8),
+          TextButton(
+            onPressed: () => _showDeleteAccountDialog(),
+            child: const Text('회원 탈퇴', style: TextStyle(color: Colors.grey)),
           ),
         ],
       ),
