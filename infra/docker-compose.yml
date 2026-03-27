@@ -1,0 +1,27 @@
+version: "3.9"
+
+services:
+  api:
+    build: ../backend
+    ports:
+      - "8000:8000"
+    env_file:
+      - ../backend/.env
+    depends_on:
+      - db
+    volumes:
+      - ../backend:/app
+
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: farebird
+      POSTGRES_PASSWORD: farebird
+      POSTGRES_DB: farebird
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+volumes:
+  postgres_data:
