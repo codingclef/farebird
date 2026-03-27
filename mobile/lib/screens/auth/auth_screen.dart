@@ -139,12 +139,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
     }
     setState(() { _loading = true; _error = null; });
     try {
-      await _authService.register(_emailCtrl.text.trim(), _passwordCtrl.text);
+      final email = _emailCtrl.text.trim();
+      await _authService.register(email, _passwordCtrl.text);
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('회원가입이 완료되었습니다. 환영합니다!')),
-        );
-        Navigator.of(context).pushReplacementNamed('/home');
+        Navigator.of(context).pushReplacementNamed('/verify-email', arguments: email);
       }
     } catch (_) {
       setState(() => _error = '이미 사용 중인 이메일입니다.');

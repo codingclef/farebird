@@ -9,9 +9,17 @@ class AuthService {
   final Dio _dio = Dio(BaseOptions(baseUrl: _baseUrl));
 
   Future<void> register(String email, String password) async {
-    final res = await _dio.post('/auth/register', data: {
+    await _dio.post('/auth/register', data: {
       'email': email,
       'password': password,
+    });
+    // 인증 코드 확인 후 세션 저장 (verifyEmail에서 처리)
+  }
+
+  Future<void> verifyEmail(String email, String code) async {
+    final res = await _dio.post('/auth/verify-email', data: {
+      'email': email,
+      'code': code,
     });
     await _saveSession(res.data);
   }

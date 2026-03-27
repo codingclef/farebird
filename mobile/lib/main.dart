@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'screens/auth/auth_screen.dart' show LoginScreen, RegisterScreen;
+import 'screens/auth/verify_email_screen.dart';
 import 'screens/search/search_screen.dart';
 import 'screens/monitor/monitor_screen.dart';
 import 'screens/settings/settings_screen.dart';
@@ -26,6 +27,9 @@ class FareBirdApp extends StatelessWidget {
         '/home': (context) => const MainScreen(),
         '/auth': (context) => const LoginScreen(),
         '/register': (context) => const RegisterScreen(),
+        '/verify-email': (context) => VerifyEmailScreen(
+              email: ModalRoute.of(context)!.settings.arguments as String,
+            ),
       },
     );
   }
