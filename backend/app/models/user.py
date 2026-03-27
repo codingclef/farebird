@@ -10,6 +10,7 @@ class User(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     email = Column(String, unique=True, index=True, nullable=False)
+    hashed_password = Column(String, nullable=False)
     push_token = Column(String, nullable=True)       # FCM 토큰
     notify_push = Column(Boolean, default=True)      # 푸시 알림 여부
     notify_email = Column(Boolean, default=True)     # 이메일 알림 여부
