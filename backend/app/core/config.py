@@ -5,13 +5,9 @@ class Settings(BaseSettings):
     APP_ENV: str = "development"
     SECRET_KEY: str = "change-me-in-production"
 
-    AMADEUS_CLIENT_ID: str
-    AMADEUS_CLIENT_SECRET: str
-    AMADEUS_HOSTNAME: str = "test"
+    SERPAPI_KEY: str = ""
 
-    DATABASE_URL: str
-
-    REDIS_URL: str = ""
+    DATABASE_URL: str = ""
 
     FIREBASE_CREDENTIALS_PATH: str = "./firebase-credentials.json"
 
