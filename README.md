@@ -1,32 +1,37 @@
 # FareBird
 
-항공권 가격 추적 및 알림 서비스
+> **Language / 언어 / 言語**
+> [English](#farebird) · [한국어](README.ko.md) · [日本語](README.ja.md)
 
-## 주요 기능
+---
 
-- 출발/도착 날짜 복수 지정 후 항공권 가격 비교
-- 항공사, 예매처, 가격, 항공편 정보 조회
-- 정기적인 가격 모니터링 및 할인 알림 (푸시 / 이메일)
-- 항공사 특가 소식 알림
+Flight price tracking and alert service.
 
-## 기술 스택
+## Features
 
-| 영역 | 기술 |
-|------|------|
+- Search round-trip flights with multiple departure and return dates
+- View airline, booking source, price, and flight details
+- Periodic price monitoring with alerts when prices drop (push / email)
+- Airline special fare announcements
+
+## Tech Stack
+
+| Area | Technology |
+|------|------------|
 | Backend | Python, FastAPI, SQLAlchemy, APScheduler |
 | Mobile | Flutter (iOS / Android / Web) |
 | Database | PostgreSQL |
-| 항공 데이터 | Amadeus for Developers API |
-| 푸시 알림 | Firebase Cloud Messaging |
-| 이메일 | SendGrid |
-| 인프라 | Docker, Oracle Cloud Free Tier |
+| Flight Data | SerpApi (Google Flights) |
+| Push Notifications | Firebase Cloud Messaging |
+| Email | SendGrid |
+| Infrastructure | Docker, Oracle Cloud Free Tier |
 
-## 로컬 개발 환경
+## Local Development
 
 ```bash
 cd infra
 docker-compose up -d
 ```
 
-API 서버: http://localhost:8000
-API 문서: http://localhost:8000/docs
+API server: http://localhost:8000
+API docs: http://localhost:8000/docs
