@@ -1,0 +1,31 @@
+{% extends "admin/base.html" %}
+{% block content %}
+<div class="card">
+  <table>
+    <thead>
+      <tr>
+        <th>ID</th>
+        <th>이메일</th>
+        <th>상태</th>
+        <th>권한</th>
+        <th>푸시 알림</th>
+        <th>이메일 알림</th>
+        <th>가입일</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for user in users %}
+      <tr>
+        <td>{{ user.id }}</td>
+        <td>{{ user.email }}</td>
+        <td><span class="badge {{ 'active' if user.is_active else 'inactive' }}">{{ '인증완료' if user.is_active else '미인증' }}</span></td>
+        <td>{% if user.is_admin %}<span class="badge admin">어드민</span>{% endif %}</td>
+        <td>{{ '✓' if user.notify_push else '✗' }}</td>
+        <td>{{ '✓' if user.notify_email else '✗' }}</td>
+        <td>{{ user.created_at.strftime('%Y-%m-%d %H:%M') }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}
