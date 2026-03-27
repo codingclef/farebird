@@ -8,7 +8,7 @@ from app.core.database import get_db
 from app.core.email import generate_code, send_verification_email
 from app.models.email_verification import EmailVerification
 from app.models.user import User
-from app.schemas.auth import LoginRequest, RegisterRequest, TokenResponse, VerifyEmailRequest
+from app.schemas.auth import LoginRequest, RegisterRequest, ResendVerificationRequest, TokenResponse, VerifyEmailRequest
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 
@@ -60,6 +60,28 @@ def verify_email(req: VerifyEmailRequest, db: Session = Depends(get_db)):
     db.commit()
 
     return TokenResponse(access_token=create_access_token(user.id), user_id=user.id)
+
+
+@router.post("/resend-verification")
+def resend_verification(req: ResendVerificationRequest, db: Session = Depends(get_db)):
+    user = db.query(User).filter(User.email == req.email).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="사용자를 찾을 수 없습니다.")
+    if user.is_active:
+        raise HTTPException(status_code=400, detail="이미 인증된 계정입니다.")
+
+    db.query(EmailVerification).filter(EmailVerification.user_id == user.id).delete()
+    code = generate_code()
+    verification = EmailVerification(
+        user_id=user.id,
+        code=code,
+        expires_at=datetime.now(timezone.utc) + timedelta(minutes=10),
+    )
+    db.add(verification)
+    db.commit()
+
+    send_verification_email(req.email, code)
+    return {"message": "인증 코드를 재발송했습니다."}
 
 
 @router.post("/login", response_model=TokenResponse)
