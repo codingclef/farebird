@@ -24,6 +24,11 @@ class LoginRequest(BaseModel):
     password: str
 
 
+class VerifyEmailRequest(BaseModel):
+    email: EmailStr
+    code: str
+
+
 class TokenResponse(BaseModel):
     access_token: str
     token_type: str = "bearer"

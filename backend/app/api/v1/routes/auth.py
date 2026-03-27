@@ -1,22 +1,64 @@
+from datetime import datetime, timedelta, timezone
+
 from fastapi import APIRouter, Depends, Header, HTTPException
 from sqlalchemy.orm import Session
 
 from app.core.auth import create_access_token, decode_token, hash_password, verify_password
 from app.core.database import get_db
+from app.core.email import generate_code, send_verification_email
+from app.models.email_verification import EmailVerification
 from app.models.user import User
-from app.schemas.auth import LoginRequest, RegisterRequest, TokenResponse
+from app.schemas.auth import LoginRequest, RegisterRequest, TokenResponse, VerifyEmailRequest
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 
 
-@router.post("/register", response_model=TokenResponse)
+@router.post("/register")
 def register(req: RegisterRequest, db: Session = Depends(get_db)):
     if db.query(User).filter(User.email == req.email).first():
         raise HTTPException(status_code=400, detail="이미 사용 중인 이메일입니다.")
-    user = User(email=req.email, hashed_password=hash_password(req.password))
+
+    user = User(email=req.email, hashed_password=hash_password(req.password), is_active=False)
     db.add(user)
     db.commit()
     db.refresh(user)
+
+    # 기존 인증 코드 삭제 후 새로 발급
+    db.query(EmailVerification).filter(EmailVerification.user_id == user.id).delete()
+    code = generate_code()
+    verification = EmailVerification(
+        user_id=user.id,
+        code=code,
+        expires_at=datetime.now(timezone.utc) + timedelta(minutes=10),
+    )
+    db.add(verification)
+    db.commit()
+
+    send_verification_email(req.email, code)
+    return {"message": "인증 코드를 이메일로 발송했습니다.", "email": req.email}
+
+
+@router.post("/verify-email", response_model=TokenResponse)
+def verify_email(req: VerifyEmailRequest, db: Session = Depends(get_db)):
+    user = db.query(User).filter(User.email == req.email).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="사용자를 찾을 수 없습니다.")
+
+    verification = db.query(EmailVerification).filter(
+        EmailVerification.user_id == user.id,
+        EmailVerification.code == req.code,
+    ).first()
+
+    if not verification:
+        raise HTTPException(status_code=400, detail="인증 코드가 올바르지 않습니다.")
+
+    if verification.expires_at.replace(tzinfo=timezone.utc) < datetime.now(timezone.utc):
+        raise HTTPException(status_code=400, detail="인증 코드가 만료되었습니다.")
+
+    user.is_active = True
+    db.delete(verification)
+    db.commit()
+
     return TokenResponse(access_token=create_access_token(user.id), user_id=user.id)
 
 
@@ -25,6 +67,8 @@ def login(req: LoginRequest, db: Session = Depends(get_db)):
     user = db.query(User).filter(User.email == req.email).first()
     if not user or not verify_password(req.password, user.hashed_password):
         raise HTTPException(status_code=401, detail="이메일 또는 비밀번호가 올바르지 않습니다.")
+    if not user.is_active:
+        raise HTTPException(status_code=403, detail="이메일 인증이 완료되지 않았습니다.")
     return TokenResponse(access_token=create_access_token(user.id), user_id=user.id)
 
 
