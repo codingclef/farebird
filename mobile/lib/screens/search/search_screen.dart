@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:table_calendar/table_calendar.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../../models/flight.dart';
 import '../../services/api_service.dart';
 
@@ -169,13 +170,24 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
       itemCount: _results.length,
       itemBuilder: (context, index) {
         final f = _results[index];
+        final hasUrl = f.bookingUrl != null && f.bookingUrl!.isNotEmpty;
         return ListTile(
           leading: const Icon(Icons.flight),
           title: Text('${f.airline}  ·  ${NumberFormat('#,###').format(f.price)}원'),
           subtitle: Text('${f.departDate} → ${f.returnDate}'
               '${f.durationOutbound != null ? '  ·  ${f.durationOutbound}' : ''}'
               '${f.stopsOutbound > 0 ? '  ·  경유 ${f.stopsOutbound}회' : '  ·  직항'}'),
-          trailing: const Icon(Icons.chevron_right),
+          trailing: hasUrl
+              ? const Icon(Icons.open_in_new, color: Color(0xFF1A73E8))
+              : const Icon(Icons.chevron_right),
+          onTap: hasUrl
+              ? () async {
+                  final uri = Uri.parse(f.bookingUrl!);
+                  if (await canLaunchUrl(uri)) {
+                    await launchUrl(uri, mode: LaunchMode.externalApplication);
+                  }
+                }
+              : null,
         );
       },
     );
