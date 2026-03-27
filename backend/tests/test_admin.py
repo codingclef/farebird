@@ -98,6 +98,32 @@ class TestAdminPages:
         assert res.status_code == 200
         assert "모니터링 노선" in res.text
 
+    def test_dashboard_counts_match_db(self, client, db):
+        from app.core.auth import hash_password
+        from app.models.user import User
+        from app.models.watched_route import WatchedRoute
+
+        # 유저 2명 추가 (어드민 포함 총 3명)
+        user = User(email="user@example.com", hashed_password=hash_password("Password1"), is_active=True)
+        db.add(user)
+        db.commit()
+
+        # 노선 1개 추가
+        route = WatchedRoute(user_id=user.id, origin="ICN", destination="NRT",
+                             depart_month="2026-06", alert_threshold=10.0)
+        db.add(route)
+        db.commit()
+
+        session = self._login(client, db)
+        res = client.get("/admin", cookies={"admin_session": session})
+        assert res.status_code == 200
+
+        total_users = db.query(User).count()
+        total_routes = db.query(WatchedRoute).count()
+
+        assert str(total_users) in res.text
+        assert str(total_routes) in res.text
+
     def test_logout_clears_session(self, client, db):
         session = self._login(client, db)
         res = client.get("/admin/logout", cookies={"admin_session": session}, follow_redirects=False)
