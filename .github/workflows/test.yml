@@ -27,6 +27,9 @@ jobs:
 
       - name: Run tests
         working-directory: backend
+        env:
+          DATABASE_URL: sqlite:///./test.db
+          SECRET_KEY: test-secret-key
         run: pytest tests/ -v
 
   flutter:
