@@ -1,9 +1,8 @@
-# FareBird
-
-> **Language / 언어 / 言語**
-> [English](#farebird) · [한국어](README.ko.md) · [日本語](README.ja.md)
+[한국어](README.ko.md) | [日本語](README.ja.md) | **[English]**
 
 ---
+
+# FareBird
 
 Flight price tracking and alert service.
 
