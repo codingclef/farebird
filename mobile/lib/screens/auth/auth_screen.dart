@@ -120,7 +120,19 @@ class _RegisterScreenState extends State<RegisterScreen> {
   bool _obscureConfirm = true;
   String? _error;
 
+  String? _validatePassword(String password) {
+    if (password.length < 8) return '비밀번호는 8자 이상이어야 합니다.';
+    if (!password.contains(RegExp(r'[A-Za-z]'))) return '영문자를 포함해야 합니다.';
+    if (!password.contains(RegExp(r'\d'))) return '숫자를 포함해야 합니다.';
+    return null;
+  }
+
   Future<void> _register() async {
+    final passwordError = _validatePassword(_passwordCtrl.text);
+    if (passwordError != null) {
+      setState(() => _error = passwordError);
+      return;
+    }
     if (_passwordCtrl.text != _passwordConfirmCtrl.text) {
       setState(() => _error = '비밀번호가 일치하지 않습니다.');
       return;
@@ -128,9 +140,14 @@ class _RegisterScreenState extends State<RegisterScreen> {
     setState(() { _loading = true; _error = null; });
     try {
       await _authService.register(_emailCtrl.text.trim(), _passwordCtrl.text);
-      if (mounted) Navigator.of(context).pushReplacementNamed('/home');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('회원가입이 완료되었습니다. 환영합니다!')),
+        );
+        Navigator.of(context).pushReplacementNamed('/home');
+      }
     } catch (_) {
-      setState(() => _error = '이미 사용 중인 이메일이거나 오류가 발생했습니다.');
+      setState(() => _error = '이미 사용 중인 이메일입니다.');
     } finally {
       if (mounted) setState(() => _loading = false);
     }
@@ -196,6 +213,11 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     ),
                   ),
                   onSubmitted: (_) => _register(),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  '8자 이상, 영문+숫자 조합',
+                  style: TextStyle(fontSize: 12, color: Colors.grey[600]),
                 ),
                 if (_error != null) ...[
                   const SizedBox(height: 12),
