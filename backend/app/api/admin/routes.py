@@ -15,15 +15,14 @@ templates = Jinja2Templates(directory="app/templates")
 
 @router.get("/login", response_class=HTMLResponse)
 def login_page(request: Request):
-    return templates.TemplateResponse("admin/login.html", {"request": request})
+    return templates.TemplateResponse(request, "admin/login.html")
 
 
 @router.post("/login")
 def login(request: Request, email: str = Form(...), password: str = Form(...), db: Session = Depends(get_db)):
     user = db.query(User).filter(User.email == email).first()
     if not user or not user.is_admin or not verify_password(password, user.hashed_password):
-        return templates.TemplateResponse("admin/login.html", {
-            "request": request,
+        return templates.TemplateResponse(request, "admin/login.html", {
             "error": "이메일 또는 비밀번호가 올바르지 않거나 어드민 권한이 없습니다."
         })
     response = RedirectResponse(url="/admin", status_code=302)
@@ -45,8 +44,7 @@ def dashboard(request: Request, db: Session = Depends(get_db), _: int = Depends(
     total_routes = db.query(WatchedRoute).count()
     recent_users = db.query(User).order_by(User.created_at.desc()).limit(10).all()
 
-    return templates.TemplateResponse("admin/dashboard.html", {
-        "request": request,
+    return templates.TemplateResponse(request, "admin/dashboard.html", {
         "title": "대시보드",
         "active": "dashboard",
         "total_users": total_users,
@@ -59,8 +57,7 @@ def dashboard(request: Request, db: Session = Depends(get_db), _: int = Depends(
 @router.get("/users", response_class=HTMLResponse)
 def users(request: Request, db: Session = Depends(get_db), _: int = Depends(require_admin_session)):
     all_users = db.query(User).order_by(User.created_at.desc()).all()
-    return templates.TemplateResponse("admin/users.html", {
-        "request": request,
+    return templates.TemplateResponse(request, "admin/users.html", {
         "title": "유저 관리",
         "active": "users",
         "users": all_users,
@@ -70,8 +67,7 @@ def users(request: Request, db: Session = Depends(get_db), _: int = Depends(requ
 @router.get("/routes", response_class=HTMLResponse)
 def routes(request: Request, db: Session = Depends(get_db), _: int = Depends(require_admin_session)):
     all_routes = db.query(WatchedRoute).order_by(WatchedRoute.created_at.desc()).all()
-    return templates.TemplateResponse("admin/routes.html", {
-        "request": request,
+    return templates.TemplateResponse(request, "admin/routes.html", {
         "title": "모니터링 노선",
         "active": "routes",
         "routes": all_routes,
