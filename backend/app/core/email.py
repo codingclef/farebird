@@ -13,7 +13,7 @@ def generate_code() -> str:
 
 def send_verification_email(to_email: str, code: str) -> None:
     if not settings.SENDGRID_API_KEY:
-        logger.info(f"[DEV] 이메일 인증 코드 ({to_email}): {code}")
+        print(f"\n[DEV] 이메일 인증 코드 ({to_email}): {code}\n", flush=True)
         return
 
     try:
