@@ -15,13 +15,19 @@ router = APIRouter(prefix="/auth", tags=["auth"])
 
 @router.post("/register")
 def register(req: RegisterRequest, db: Session = Depends(get_db)):
-    if db.query(User).filter(User.email == req.email).first():
-        raise HTTPException(status_code=400, detail="이미 사용 중인 이메일입니다.")
-
-    user = User(email=req.email, hashed_password=hash_password(req.password), is_active=False)
-    db.add(user)
-    db.commit()
-    db.refresh(user)
+    existing = db.query(User).filter(User.email == req.email).first()
+    if existing:
+        if existing.is_active:
+            raise HTTPException(status_code=400, detail="이미 사용 중인 이메일입니다.")
+        # 미인증 계정이면 비밀번호 업데이트 후 코드 재발송
+        existing.hashed_password = hash_password(req.password)
+        db.commit()
+        user = existing
+    else:
+        user = User(email=req.email, hashed_password=hash_password(req.password), is_active=False)
+        db.add(user)
+        db.commit()
+        db.refresh(user)
 
     # 기존 인증 코드 삭제 후 새로 발급
     db.query(EmailVerification).filter(EmailVerification.user_id == user.id).delete()

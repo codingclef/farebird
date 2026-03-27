@@ -12,7 +12,26 @@ class TestRegister:
         assert res.status_code == 200
         assert res.json()["email"] == "user@example.com"
 
-    def test_register_duplicate_email(self, client):
+    def test_register_duplicate_active_email(self, client, db):
+        with patch("app.api.v1.routes.auth.send_verification_email"):
+            client.post("/api/v1/auth/register", json={
+                "email": "user@example.com",
+                "password": "Password1",
+            })
+        from app.models.email_verification import EmailVerification
+        code = db.query(EmailVerification).first().code
+        client.post("/api/v1/auth/verify-email", json={
+            "email": "user@example.com",
+            "code": code,
+        })
+        with patch("app.api.v1.routes.auth.send_verification_email"):
+            res = client.post("/api/v1/auth/register", json={
+                "email": "user@example.com",
+                "password": "Password1",
+            })
+        assert res.status_code == 400
+
+    def test_register_unverified_email_allowed(self, client):
         with patch("app.api.v1.routes.auth.send_verification_email"):
             client.post("/api/v1/auth/register", json={
                 "email": "user@example.com",
@@ -20,9 +39,9 @@ class TestRegister:
             })
             res = client.post("/api/v1/auth/register", json={
                 "email": "user@example.com",
-                "password": "Password1",
+                "password": "NewPass2",
             })
-        assert res.status_code == 400
+        assert res.status_code == 200
 
     def test_register_weak_password(self, client):
         res = client.post("/api/v1/auth/register", json={
