@@ -13,6 +13,7 @@ class _VerifyEmailScreenState extends State<VerifyEmailScreen> {
   final _authService = AuthService();
   final _codeCtrl = TextEditingController();
   bool _loading = false;
+  bool _resending = false;
   String? _error;
 
   Future<void> _verify() async {
@@ -33,6 +34,22 @@ class _VerifyEmailScreenState extends State<VerifyEmailScreen> {
       setState(() => _error = '인증 코드가 올바르지 않거나 만료되었습니다.');
     } finally {
       if (mounted) setState(() => _loading = false);
+    }
+  }
+
+  Future<void> _resend() async {
+    setState(() { _resending = true; _error = null; });
+    try {
+      await _authService.resendVerification(widget.email);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('인증 코드를 재발송했습니다.')),
+        );
+      }
+    } catch (_) {
+      setState(() => _error = '재발송에 실패했습니다. 잠시 후 다시 시도해주세요.');
+    } finally {
+      if (mounted) setState(() => _resending = false);
     }
   }
 
@@ -88,6 +105,13 @@ class _VerifyEmailScreenState extends State<VerifyEmailScreen> {
                         ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
                         : const Text('인증 완료'),
                   ),
+                ),
+                const SizedBox(height: 12),
+                TextButton(
+                  onPressed: _resending ? null : _resend,
+                  child: _resending
+                      ? const SizedBox(height: 16, width: 16, child: CircularProgressIndicator(strokeWidth: 2))
+                      : const Text('코드를 받지 못하셨나요? 재발송'),
                 ),
               ],
             ),

@@ -29,6 +29,10 @@ class VerifyEmailRequest(BaseModel):
     code: str
 
 
+class ResendVerificationRequest(BaseModel):
+    email: EmailStr
+
+
 class TokenResponse(BaseModel):
     access_token: str
     token_type: str = "bearer"
