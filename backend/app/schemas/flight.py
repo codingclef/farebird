@@ -2,11 +2,15 @@ from pydantic import BaseModel
 from typing import Optional
 
 
+class DatePair(BaseModel):
+    depart_date: str   # 출발 날짜 (예: "2025-06-01")
+    return_date: str   # 귀국 날짜 (예: "2025-06-10")
+
+
 class FlightSearchRequest(BaseModel):
     origin: str           # 출발 공항 코드 (예: ICN)
     destination: str      # 도착 공항 코드 (예: NRT)
-    depart_dates: list[str]   # 출발 날짜 목록 (예: ["2025-06-01", "2025-06-08"])
-    return_dates: list[str]   # 귀국 날짜 목록 (예: ["2025-06-10", "2025-06-15"])
+    date_pairs: list[DatePair]   # 출발-귀국 날짜 쌍 목록
     adults: int = 1
     currency: str = "KRW"
 

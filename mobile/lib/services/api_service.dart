@@ -24,16 +24,14 @@ class ApiService {
   Future<Map<String, dynamic>> searchFlights({
     required String origin,
     required String destination,
-    required List<String> departDates,
-    required List<String> returnDates,
+    required List<Map<String, String>> datePairs,
     int adults = 1,
     String currency = 'KRW',
   }) async {
     final response = await _dio.post('/flights/search', data: {
       'origin': origin,
       'destination': destination,
-      'depart_dates': departDates,
-      'return_dates': returnDates,
+      'date_pairs': datePairs,
       'adults': adults,
       'currency': currency,
     });

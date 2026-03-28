@@ -89,6 +89,14 @@ const _airports = [
   Airport('DXB', '두바이국제공항', '두바이'),
 ];
 
+/// 출발일-귀국일 쌍
+class DatePair {
+  final DateTime depart;
+  final DateTime ret;
+
+  const DatePair({required this.depart, required this.ret});
+}
+
 class SearchScreen extends ConsumerStatefulWidget {
   const SearchScreen({super.key});
 
@@ -100,20 +108,54 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
   String? _origin;
   String? _destination;
 
-  final Set<DateTime> _selectedDepartDates = {};
-  final Set<DateTime> _selectedReturnDates = {};
-  bool _selectingDepart = true;
+  /// 확정된 날짜 쌍 목록
+  final List<DatePair> _datePairs = [];
+
+  /// 현재 입력 중인 출발일 (귀국일 선택 대기 중)
+  DateTime? _pendingDepart;
 
   List<FlightItinerary> _results = [];
   bool _loading = false;
   String? _error;
 
+  bool get _isSelectingReturn => _pendingDepart != null;
+
+  void _onDaySelected(DateTime selected, DateTime focused) {
+    setState(() {
+      if (!_isSelectingReturn) {
+        // 1단계: 출발일 선택
+        _pendingDepart = selected;
+      } else {
+        // 2단계: 귀국일 선택
+        if (selected.isAfter(_pendingDepart!)) {
+          _datePairs.add(DatePair(depart: _pendingDepart!, ret: selected));
+          _pendingDepart = null;
+        } else {
+          _error = '귀국일은 출발일보다 이후여야 합니다.';
+        }
+      }
+    });
+  }
+
+  void _removePair(int index) {
+    setState(() => _datePairs.removeAt(index));
+  }
+
+  void _cancelPending() {
+    setState(() => _pendingDepart = null);
+  }
+
   Future<void> _search() async {
-    if (_origin == null ||
-        _destination == null ||
-        _selectedDepartDates.isEmpty ||
-        _selectedReturnDates.isEmpty) {
-      setState(() => _error = '출발지, 도착지, 날짜를 모두 선택해주세요.');
+    if (_origin == null) {
+      setState(() => _error = '출발지를 선택해주세요.');
+      return;
+    }
+    if (_destination == null) {
+      setState(() => _error = '도착지를 선택해주세요.');
+      return;
+    }
+    if (_datePairs.isEmpty) {
+      setState(() => _error = '날짜를 선택해주세요.');
       return;
     }
 
@@ -124,11 +166,17 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
 
     try {
       final fmt = DateFormat('yyyy-MM-dd');
+      final pairs = _datePairs
+          .map((p) => {
+                'depart_date': fmt.format(p.depart),
+                'return_date': fmt.format(p.ret),
+              })
+          .toList();
+
       final data = await _apiService.searchFlights(
         origin: _origin!,
         destination: _destination!,
-        departDates: _selectedDepartDates.map((d) => fmt.format(d)).toList(),
-        returnDates: _selectedReturnDates.map((d) => fmt.format(d)).toList(),
+        datePairs: pairs,
       );
       setState(() {
         _results = (data['results'] as List)
@@ -136,7 +184,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
             .toList();
       });
     } catch (e) {
-      setState(() => _error = '검색 중 오류가 발생했습니다.');
+      setState(() => _error = e.toString());
     } finally {
       setState(() => _loading = false);
     }
@@ -151,6 +199,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
           Padding(
             padding: const EdgeInsets.all(16),
             child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Row(
                   children: [
@@ -172,46 +221,67 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                     ),
                   ],
                 ),
-                const SizedBox(height: 12),
-                SegmentedButton<bool>(
-                  segments: const [
-                    ButtonSegment(value: true, label: Text('출발일 선택')),
-                    ButtonSegment(value: false, label: Text('귀국일 선택')),
-                  ],
-                  selected: {_selectingDepart},
-                  onSelectionChanged: (v) =>
-                      setState(() => _selectingDepart = v.first),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  _selectingDepart
-                      ? '출발일 선택됨: ${_selectedDepartDates.length}개'
-                      : '귀국일 선택됨: ${_selectedReturnDates.length}개',
-                  style: Theme.of(context).textTheme.bodySmall,
-                ),
+                const SizedBox(height: 16),
+
+                // 달력 안내 문구
+                _buildCalendarGuide(),
+
                 TableCalendar(
                   firstDay: DateTime.now(),
                   lastDay: DateTime.now().add(const Duration(days: 365)),
-                  focusedDay: DateTime.now(),
-                  selectedDayPredicate: (day) => _selectingDepart
-                      ? _selectedDepartDates.any((d) => isSameDay(d, day))
-                      : _selectedReturnDates.any((d) => isSameDay(d, day)),
-                  onDaySelected: (selected, focused) {
-                    setState(() {
-                      final set = _selectingDepart
-                          ? _selectedDepartDates
-                          : _selectedReturnDates;
-                      if (set.any((d) => isSameDay(d, selected))) {
-                        set.removeWhere((d) => isSameDay(d, selected));
-                      } else {
-                        set.add(selected);
-                      }
-                    });
+                  focusedDay: _pendingDepart ?? DateTime.now(),
+                  selectedDayPredicate: (day) {
+                    return _pendingDepart != null && isSameDay(day, _pendingDepart!);
                   },
+                  calendarBuilders: CalendarBuilders(
+                    todayBuilder: (context, day, focusedDay) {
+                      return Container(
+                        margin: const EdgeInsets.all(4),
+                        alignment: Alignment.center,
+                        child: Text(
+                          '${day.day}',
+                          style: const TextStyle(fontWeight: FontWeight.bold),
+                        ),
+                      );
+                    },
+                    selectedBuilder: (context, day, focusedDay) {
+                      // pendingDepart만 주황색으로 표시
+                      return Container(
+                        margin: const EdgeInsets.all(4),
+                        decoration: const BoxDecoration(
+                          color: Colors.orange,
+                          shape: BoxShape.circle,
+                        ),
+                        alignment: Alignment.center,
+                        child: Text(
+                          '${day.day}',
+                          style: const TextStyle(
+                              color: Colors.white, fontWeight: FontWeight.bold),
+                        ),
+                      );
+                    },
+                  ),
+                  onDaySelected: _onDaySelected,
                   calendarFormat: CalendarFormat.month,
-                  headerStyle:
-                      const HeaderStyle(formatButtonVisible: false),
+                  headerStyle: const HeaderStyle(formatButtonVisible: false),
                 ),
+
+                // 선택된 날짜 쌍 목록
+                if (_datePairs.isNotEmpty) ...[
+                  const SizedBox(height: 8),
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 4,
+                    children: [
+                      for (int i = 0; i < _datePairs.length; i++)
+                        _DatePairChip(
+                          pair: _datePairs[i],
+                          onRemove: () => _removePair(i),
+                        ),
+                    ],
+                  ),
+                ],
+
                 if (_error != null)
                   Padding(
                     padding: const EdgeInsets.only(top: 8),
@@ -238,6 +308,55 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
         ],
       ),
     );
+  }
+
+  Widget _buildCalendarGuide() {
+    if (!_isSelectingReturn) {
+      return Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        margin: const EdgeInsets.only(bottom: 8),
+        decoration: BoxDecoration(
+          color: const Color(0xFF1A73E8).withOpacity(0.1),
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: const Row(
+          children: [
+            Icon(Icons.flight_takeoff, size: 16, color: Color(0xFF1A73E8)),
+            SizedBox(width: 8),
+            Text('출발일을 선택하세요',
+                style: TextStyle(
+                    color: Color(0xFF1A73E8), fontWeight: FontWeight.w500)),
+          ],
+        ),
+      );
+    } else {
+      final fmt = DateFormat('M/d');
+      return Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        margin: const EdgeInsets.only(bottom: 8),
+        decoration: BoxDecoration(
+          color: Colors.orange.withOpacity(0.1),
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: Row(
+          children: [
+            const Icon(Icons.flight_land, size: 16, color: Colors.orange),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Text(
+                '귀국일을 선택하세요  (출발: ${fmt.format(_pendingDepart!)})',
+                style: const TextStyle(
+                    color: Colors.orange, fontWeight: FontWeight.w500),
+              ),
+            ),
+            GestureDetector(
+              onTap: _cancelPending,
+              child: const Icon(Icons.close, size: 16, color: Colors.orange),
+            ),
+          ],
+        ),
+      );
+    }
   }
 
   Widget _buildResults() {
@@ -270,6 +389,28 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
               : null,
         );
       },
+    );
+  }
+}
+
+class _DatePairChip extends StatelessWidget {
+  final DatePair pair;
+  final VoidCallback onRemove;
+
+  const _DatePairChip({required this.pair, required this.onRemove});
+
+  @override
+  Widget build(BuildContext context) {
+    final fmt = DateFormat('M/d');
+    return Chip(
+      label: Text(
+        '${fmt.format(pair.depart)} 출발 → ${fmt.format(pair.ret)} 귀국',
+        style: const TextStyle(fontSize: 13),
+      ),
+      deleteIcon: const Icon(Icons.close, size: 16),
+      onDeleted: onRemove,
+      backgroundColor: const Color(0xFF1A73E8).withOpacity(0.1),
+      side: const BorderSide(color: Color(0xFF1A73E8), width: 0.5),
     );
   }
 }
