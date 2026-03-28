@@ -122,17 +122,18 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
 
   void _onDaySelected(DateTime selected, DateTime focused) {
     setState(() {
-      if (!_isSelectingReturn) {
+      if (_pendingDepart == null) {
         // 1단계: 출발일 선택
         _pendingDepart = selected;
-      } else {
+      } else if (isSameDay(selected, _pendingDepart!)) {
+        // 출발일 재클릭 → 취소
+        _pendingDepart = null;
+      } else if (selected.isAfter(_pendingDepart!)) {
         // 2단계: 귀국일 선택
-        if (selected.isAfter(_pendingDepart!)) {
-          _datePairs.add(DatePair(depart: _pendingDepart!, ret: selected));
-          _pendingDepart = null;
-        } else {
-          _error = '귀국일은 출발일보다 이후여야 합니다.';
-        }
+        _datePairs.add(DatePair(depart: _pendingDepart!, ret: selected));
+        _pendingDepart = null;
+      } else {
+        _error = '귀국일은 출발일보다 이후여야 합니다.';
       }
     });
   }
@@ -359,6 +360,18 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
     }
   }
 
+  Uri _buildFlightsUrl(FlightItinerary f) {
+    // Kayak URL: /flights/{ORIGIN}-{DESTINATION}/{depart_date}/{return_date}
+    return Uri(
+      scheme: 'https',
+      host: 'www.kayak.co.kr',
+      path: '/flights'
+          '/${(_origin ?? '').toUpperCase()}-${(_destination ?? '').toUpperCase()}'
+          '/${f.departDate}'
+          '/${f.returnDate}',
+    );
+  }
+
   Widget _buildResults() {
     if (_results.isEmpty) {
       return const Center(child: Text('검색 결과가 여기에 표시됩니다.'));
@@ -367,26 +380,20 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
       itemCount: _results.length,
       itemBuilder: (context, index) {
         final f = _results[index];
-        final hasUrl = f.bookingUrl != null && f.bookingUrl!.isNotEmpty;
         return ListTile(
           leading: const Icon(Icons.flight),
           title: Text(
-              '${f.airline}  ·  ${NumberFormat('#,###').format(f.price)}원'),
+              '${f.airline}${f.airlineReturn != null && f.airlineReturn != f.airline ? ' / ${f.airlineReturn}' : ''}  ·  ${NumberFormat('#,###').format(f.price)}원'),
           subtitle: Text('${f.departDate} → ${f.returnDate}'
               '${f.durationOutbound != null ? '  ·  ${f.durationOutbound}' : ''}'
               '${f.stopsOutbound > 0 ? '  ·  경유 ${f.stopsOutbound}회' : '  ·  직항'}'),
-          trailing: hasUrl
-              ? const Icon(Icons.open_in_new, color: Color(0xFF1A73E8))
-              : const Icon(Icons.chevron_right),
-          onTap: hasUrl
-              ? () async {
-                  final uri = Uri.parse(f.bookingUrl!);
-                  if (await canLaunchUrl(uri)) {
-                    await launchUrl(uri,
-                        mode: LaunchMode.externalApplication);
-                  }
-                }
-              : null,
+          trailing: const Icon(Icons.open_in_new, color: Color(0xFF1A73E8)),
+          onTap: () async {
+            final uri = _buildFlightsUrl(f);
+            if (await canLaunchUrl(uri)) {
+              await launchUrl(uri, mode: LaunchMode.externalApplication);
+            }
+          },
         );
       },
     );
