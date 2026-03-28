@@ -382,14 +382,32 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
         final f = _results[index];
         return ListTile(
           leading: const Icon(Icons.flight),
-          title: Text(
-              '${f.airline}${f.airlineReturn != null && f.airlineReturn != f.airline ? ' / ${f.airlineReturn}' : ''}  ·  ${NumberFormat('#,###').format(f.price)}원'),
-          subtitle: Text(
-              '${f.departDate}${f.departTime != null ? ' ${f.departTime}' : ''}'
-              ' → '
-              '${f.returnDate}${f.arriveTime != null ? ' ${f.arriveTime}' : ''}'
-              '${f.durationOutbound != null ? '  ·  ${f.durationOutbound}' : ''}'
-              '${f.stopsOutbound > 0 ? '  ·  경유 ${f.stopsOutbound}회' : '  ·  직항'}'),
+          title: Text('${NumberFormat('#,###').format(f.price)}원'),
+          subtitle: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                '가는편  ${f.airline}  '
+                '${f.departDate}${f.departTime != null ? ' ${f.departTime}' : ''}'
+                ' → '
+                '${f.arriveTime ?? ''}',
+                style: const TextStyle(fontSize: 12),
+              ),
+              Text(
+                '오는편  ${f.airlineReturn ?? f.airline}  '
+                '${f.returnDate}${f.returnDepartTime != null ? ' ${f.returnDepartTime}' : ''}'
+                ' → '
+                '${f.returnArriveTime ?? ''}',
+                style: const TextStyle(fontSize: 12),
+              ),
+              Text(
+                '${f.stopsOutbound > 0 ? '경유 ${f.stopsOutbound}회' : '직항'}'
+                '${f.durationOutbound != null ? '  ·  ${f.durationOutbound}' : ''}',
+                style: TextStyle(fontSize: 11, color: Colors.grey[600]),
+              ),
+            ],
+          ),
+          isThreeLine: true,
           trailing: const Icon(Icons.open_in_new, color: Color(0xFF1A73E8)),
           onTap: () async {
             final uri = _buildFlightsUrl(f);

@@ -46,6 +46,8 @@ def _search_one(origin: str, destination: str, depart_date: str, return_date: st
 
         depart_time = _time(legs[0].get("departure_airport", {}).get("time"))
         arrive_time = _time(legs[-1].get("arrival_airport", {}).get("time"))
+        return_depart_time = _time(return_legs[0].get("departure_airport", {}).get("time")) if return_legs else None
+        return_arrive_time = _time(return_legs[-1].get("arrival_airport", {}).get("time")) if return_legs else None
 
         total_duration = flight.get("total_duration", 0)
         itineraries.append(FlightItinerary(
@@ -55,6 +57,8 @@ def _search_one(origin: str, destination: str, depart_date: str, return_date: st
             airline_return=return_airline,
             depart_time=depart_time,
             arrive_time=arrive_time,
+            return_depart_time=return_depart_time,
+            return_arrive_time=return_arrive_time,
             price=flight.get("price", 0),
             currency=currency,
             duration_outbound=f"{total_duration // 60}h {total_duration % 60}m" if total_duration else None,
