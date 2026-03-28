@@ -3,6 +3,8 @@ class FlightItinerary {
   final String returnDate;
   final String airline;
   final String? airlineReturn;
+  final String? departTime;
+  final String? arriveTime;
   final int price;
   final String currency;
   final String? durationOutbound;
@@ -14,6 +16,8 @@ class FlightItinerary {
     required this.returnDate,
     required this.airline,
     this.airlineReturn,
+    this.departTime,
+    this.arriveTime,
     required this.price,
     required this.currency,
     this.durationOutbound,
@@ -27,6 +31,8 @@ class FlightItinerary {
       returnDate: json['return_date'],
       airline: json['airline'],
       airlineReturn: json['airline_return'],
+      departTime: json['depart_time'],
+      arriveTime: json['arrive_time'],
       price: json['price'],
       currency: json['currency'],
       durationOutbound: json['duration_outbound'],

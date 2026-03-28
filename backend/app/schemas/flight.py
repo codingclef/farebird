@@ -20,6 +20,8 @@ class FlightItinerary(BaseModel):
     return_date: str
     airline: str
     airline_return: Optional[str] = None
+    depart_time: Optional[str] = None   # 출발 시각 (예: "09:30")
+    arrive_time: Optional[str] = None   # 도착 시각 (예: "11:45")
     price: int
     currency: str
     duration_outbound: Optional[str] = None

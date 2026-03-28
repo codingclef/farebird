@@ -384,7 +384,10 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
           leading: const Icon(Icons.flight),
           title: Text(
               '${f.airline}${f.airlineReturn != null && f.airlineReturn != f.airline ? ' / ${f.airlineReturn}' : ''}  ·  ${NumberFormat('#,###').format(f.price)}원'),
-          subtitle: Text('${f.departDate} → ${f.returnDate}'
+          subtitle: Text(
+              '${f.departDate}${f.departTime != null ? ' ${f.departTime}' : ''}'
+              ' → '
+              '${f.returnDate}${f.arriveTime != null ? ' ${f.arriveTime}' : ''}'
               '${f.durationOutbound != null ? '  ·  ${f.durationOutbound}' : ''}'
               '${f.stopsOutbound > 0 ? '  ·  경유 ${f.stopsOutbound}회' : '  ·  직항'}'),
           trailing: const Icon(Icons.open_in_new, color: Color(0xFF1A73E8)),
