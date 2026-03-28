@@ -10,6 +10,25 @@ class DatePair {
 /// 귀국일이 출발일 이후인지 검증
 bool isValidPair(DateTime depart, DateTime ret) => ret.isAfter(depart);
 
+/// _onDaySelected 로직을 재현한 순수 함수
+/// pendingDepart: 현재 선택된 출발일 (null이면 1단계)
+/// 반환값: (새 pendingDepart, 추가된 쌍, 에러메시지)
+typedef SelectResult = ({DateTime? pending, DatePair? added, String? error});
+
+SelectResult onDaySelected(DateTime selected, DateTime? pendingDepart) {
+  if (pendingDepart == null) {
+    return (pending: selected, added: null, error: null);
+  } else if (selected.year == pendingDepart.year &&
+      selected.month == pendingDepart.month &&
+      selected.day == pendingDepart.day) {
+    return (pending: null, added: null, error: null);
+  } else if (selected.isAfter(pendingDepart)) {
+    return (pending: null, added: DatePair(depart: pendingDepart, ret: selected), error: null);
+  } else {
+    return (pending: pendingDepart, added: null, error: '귀국일은 출발일보다 이후여야 합니다.');
+  }
+}
+
 /// 날짜 쌍 목록을 API 요청 형식으로 변환
 List<Map<String, String>> toApiPairs(List<DatePair> pairs) {
   return pairs.map((p) {
@@ -69,6 +88,48 @@ void main() {
       // 쌍이 2개면 정확히 2가지 여행 일정을 의미
       expect(pairs.length, 2);
       expect(pairs[0].depart, isNot(equals(pairs[1].depart)));
+    });
+  });
+
+  group('날짜 선택 인터랙션 로직', () {
+    test('출발일 선택 → pendingDepart 세팅', () {
+      final result = onDaySelected(DateTime(2026, 5, 1), null);
+      expect(result.pending, DateTime(2026, 5, 1));
+      expect(result.added, isNull);
+    });
+
+    test('출발일 재클릭 → 선택 취소', () {
+      final depart = DateTime(2026, 5, 1);
+      final result = onDaySelected(depart, depart);
+      expect(result.pending, isNull);
+      expect(result.added, isNull);
+      expect(result.error, isNull);
+    });
+
+    test('귀국일 선택 → 쌍 완성', () {
+      final depart = DateTime(2026, 5, 1);
+      final ret = DateTime(2026, 5, 10);
+      final result = onDaySelected(ret, depart);
+      expect(result.pending, isNull);
+      expect(result.added?.depart, depart);
+      expect(result.added?.ret, ret);
+    });
+
+    test('귀국일이 출발일 이전 → 에러', () {
+      final depart = DateTime(2026, 5, 10);
+      final before = DateTime(2026, 5, 1);
+      final result = onDaySelected(before, depart);
+      expect(result.error, isNotNull);
+      expect(result.added, isNull);
+      expect(result.pending, depart); // pendingDepart 유지
+    });
+
+    test('귀국일이 출발일과 같음 → 에러', () {
+      final same = DateTime(2026, 5, 1);
+      final result = onDaySelected(same, same);
+      // isSameDay이므로 취소로 처리됨 (에러 아님)
+      expect(result.pending, isNull);
+      expect(result.error, isNull);
     });
   });
 

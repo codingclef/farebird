@@ -122,21 +122,18 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
 
   void _onDaySelected(DateTime selected, DateTime focused) {
     setState(() {
-      if (!_isSelectingReturn) {
-        // 1단계: 출발일 선택 (같은 날 재클릭 시 취소)
-        if (_pendingDepart != null && isSameDay(selected, _pendingDepart!)) {
-          _pendingDepart = null;
-        } else {
-          _pendingDepart = selected;
-        }
-      } else {
+      if (_pendingDepart == null) {
+        // 1단계: 출발일 선택
+        _pendingDepart = selected;
+      } else if (isSameDay(selected, _pendingDepart!)) {
+        // 출발일 재클릭 → 취소
+        _pendingDepart = null;
+      } else if (selected.isAfter(_pendingDepart!)) {
         // 2단계: 귀국일 선택
-        if (selected.isAfter(_pendingDepart!)) {
-          _datePairs.add(DatePair(depart: _pendingDepart!, ret: selected));
-          _pendingDepart = null;
-        } else {
-          _error = '귀국일은 출발일보다 이후여야 합니다.';
-        }
+        _datePairs.add(DatePair(depart: _pendingDepart!, ret: selected));
+        _pendingDepart = null;
+      } else {
+        _error = '귀국일은 출발일보다 이후여야 합니다.';
       }
     });
   }
