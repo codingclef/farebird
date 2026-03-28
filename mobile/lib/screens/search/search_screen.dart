@@ -359,6 +359,19 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
     }
   }
 
+  Uri _buildFlightsUrl(FlightItinerary f) {
+    return Uri(
+      scheme: 'https',
+      host: 'www.google.com',
+      path: '/travel/flights',
+      queryParameters: {
+        'hl': 'ko',
+        'curr': f.currency,
+        'q': '${_origin ?? ''} to ${_destination ?? ''} ${f.departDate}',
+      },
+    );
+  }
+
   Widget _buildResults() {
     if (_results.isEmpty) {
       return const Center(child: Text('검색 결과가 여기에 표시됩니다.'));
@@ -367,7 +380,6 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
       itemCount: _results.length,
       itemBuilder: (context, index) {
         final f = _results[index];
-        final hasUrl = f.bookingUrl != null && f.bookingUrl!.isNotEmpty;
         return ListTile(
           leading: const Icon(Icons.flight),
           title: Text(
@@ -375,18 +387,13 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
           subtitle: Text('${f.departDate} → ${f.returnDate}'
               '${f.durationOutbound != null ? '  ·  ${f.durationOutbound}' : ''}'
               '${f.stopsOutbound > 0 ? '  ·  경유 ${f.stopsOutbound}회' : '  ·  직항'}'),
-          trailing: hasUrl
-              ? const Icon(Icons.open_in_new, color: Color(0xFF1A73E8))
-              : const Icon(Icons.chevron_right),
-          onTap: hasUrl
-              ? () async {
-                  final uri = Uri.parse(f.bookingUrl!);
-                  if (await canLaunchUrl(uri)) {
-                    await launchUrl(uri,
-                        mode: LaunchMode.externalApplication);
-                  }
-                }
-              : null,
+          trailing: const Icon(Icons.open_in_new, color: Color(0xFF1A73E8)),
+          onTap: () async {
+            final uri = _buildFlightsUrl(f);
+            if (await canLaunchUrl(uri)) {
+              await launchUrl(uri, mode: LaunchMode.externalApplication);
+            }
+          },
         );
       },
     );
