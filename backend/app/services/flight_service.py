@@ -8,7 +8,7 @@ from app.schemas.flight import FlightItinerary, FlightSearchRequest, FlightSearc
 
 
 def _time(raw: str | None) -> str | None:
-    """SerpAPI 시각 포맷 "2026-05-01 09:30" → "09:30""""
+    # SerpAPI time format: "2026-05-01 09:30" -> "09:30"
     if not raw:
         return None
     parts = raw.split(" ")
