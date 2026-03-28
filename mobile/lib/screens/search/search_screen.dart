@@ -360,15 +360,21 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
   }
 
   Uri _buildFlightsUrl(FlightItinerary f) {
+    // Skyscanner URL: /transport/flights/{origin}/{destination}/{YYMMDD}/{YYMMDD}/
+    String toYYMMDD(String isoDate) {
+      // isoDate: "2026-03-30" → "260330"
+      final parts = isoDate.split('-');
+      return '${parts[0].substring(2)}${parts[1]}${parts[2]}';
+    }
+
     return Uri(
       scheme: 'https',
-      host: 'www.google.com',
-      path: '/travel/flights',
-      queryParameters: {
-        'hl': 'ko',
-        'curr': f.currency,
-        'q': '${_origin ?? ''} to ${_destination ?? ''} ${f.departDate}',
-      },
+      host: 'www.skyscanner.co.kr',
+      path: '/transport/flights'
+          '/${(_origin ?? '').toLowerCase()}'
+          '/${(_destination ?? '').toLowerCase()}'
+          '/${toYYMMDD(f.departDate)}'
+          '/${toYYMMDD(f.returnDate)}/',
     );
   }
 
