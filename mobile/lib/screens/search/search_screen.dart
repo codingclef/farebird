@@ -146,8 +146,16 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
   }
 
   Future<void> _search() async {
-    if (_origin == null || _destination == null || _datePairs.isEmpty) {
-      setState(() => _error = '출발지, 도착지, 날짜를 모두 선택해주세요.');
+    if (_origin == null) {
+      setState(() => _error = '출발지를 선택해주세요.');
+      return;
+    }
+    if (_destination == null) {
+      setState(() => _error = '도착지를 선택해주세요.');
+      return;
+    }
+    if (_datePairs.isEmpty) {
+      setState(() => _error = '날짜를 선택해주세요.');
       return;
     }
 
@@ -176,7 +184,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
             .toList();
       });
     } catch (e) {
-      setState(() => _error = '검색 중 오류가 발생했습니다.');
+      setState(() => _error = e.toString());
     } finally {
       setState(() => _loading = false);
     }
@@ -223,26 +231,25 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                   lastDay: DateTime.now().add(const Duration(days: 365)),
                   focusedDay: _pendingDepart ?? DateTime.now(),
                   selectedDayPredicate: (day) {
-                    if (_pendingDepart != null && isSameDay(day, _pendingDepart!)) {
-                      return true;
-                    }
-                    return _datePairs.any(
-                        (p) => isSameDay(day, p.depart) || isSameDay(day, p.ret));
+                    return _pendingDepart != null && isSameDay(day, _pendingDepart!);
                   },
                   calendarBuilders: CalendarBuilders(
-                    selectedBuilder: (context, day, focusedDay) {
-                      // 출발일: 파란색, 귀국일: 초록색, pendingDepart: 주황색
-                      Color color = const Color(0xFF1A73E8);
-                      if (_pendingDepart != null && isSameDay(day, _pendingDepart!)) {
-                        color = Colors.orange;
-                      } else {
-                        final isReturn = _datePairs.any((p) => isSameDay(day, p.ret));
-                        if (isReturn) color = Colors.green;
-                      }
+                    todayBuilder: (context, day, focusedDay) {
                       return Container(
                         margin: const EdgeInsets.all(4),
-                        decoration: BoxDecoration(
-                          color: color,
+                        alignment: Alignment.center,
+                        child: Text(
+                          '${day.day}',
+                          style: const TextStyle(fontWeight: FontWeight.bold),
+                        ),
+                      );
+                    },
+                    selectedBuilder: (context, day, focusedDay) {
+                      // pendingDepart만 주황색으로 표시
+                      return Container(
+                        margin: const EdgeInsets.all(4),
+                        decoration: const BoxDecoration(
+                          color: Colors.orange,
                           shape: BoxShape.circle,
                         ),
                         alignment: Alignment.center,
