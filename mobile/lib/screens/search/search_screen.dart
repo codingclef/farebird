@@ -123,8 +123,12 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
   void _onDaySelected(DateTime selected, DateTime focused) {
     setState(() {
       if (!_isSelectingReturn) {
-        // 1단계: 출발일 선택
-        _pendingDepart = selected;
+        // 1단계: 출발일 선택 (같은 날 재클릭 시 취소)
+        if (_pendingDepart != null && isSameDay(selected, _pendingDepart!)) {
+          _pendingDepart = null;
+        } else {
+          _pendingDepart = selected;
+        }
       } else {
         // 2단계: 귀국일 선택
         if (selected.isAfter(_pendingDepart!)) {
@@ -360,21 +364,14 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
   }
 
   Uri _buildFlightsUrl(FlightItinerary f) {
-    // Skyscanner URL: /transport/flights/{origin}/{destination}/{YYMMDD}/{YYMMDD}/
-    String toYYMMDD(String isoDate) {
-      // isoDate: "2026-03-30" → "260330"
-      final parts = isoDate.split('-');
-      return '${parts[0].substring(2)}${parts[1]}${parts[2]}';
-    }
-
+    // Kayak URL: /flights/{ORIGIN}-{DESTINATION}/{depart_date}/{return_date}
     return Uri(
       scheme: 'https',
-      host: 'www.skyscanner.co.kr',
-      path: '/transport/flights'
-          '/${(_origin ?? '').toLowerCase()}'
-          '/${(_destination ?? '').toLowerCase()}'
-          '/${toYYMMDD(f.departDate)}'
-          '/${toYYMMDD(f.returnDate)}/',
+      host: 'www.kayak.co.kr',
+      path: '/flights'
+          '/${(_origin ?? '').toUpperCase()}-${(_destination ?? '').toUpperCase()}'
+          '/${f.departDate}'
+          '/${f.returnDate}',
     );
   }
 
@@ -389,7 +386,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
         return ListTile(
           leading: const Icon(Icons.flight),
           title: Text(
-              '${f.airline}  ·  ${NumberFormat('#,###').format(f.price)}원'),
+              '${f.airline}${f.airlineReturn != null && f.airlineReturn != f.airline ? ' / ${f.airlineReturn}' : ''}  ·  ${NumberFormat('#,###').format(f.price)}원'),
           subtitle: Text('${f.departDate} → ${f.returnDate}'
               '${f.durationOutbound != null ? '  ·  ${f.durationOutbound}' : ''}'
               '${f.stopsOutbound > 0 ? '  ·  경유 ${f.stopsOutbound}회' : '  ·  직항'}'),

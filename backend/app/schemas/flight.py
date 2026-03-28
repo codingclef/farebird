@@ -19,6 +19,7 @@ class FlightItinerary(BaseModel):
     depart_date: str
     return_date: str
     airline: str
+    airline_return: Optional[str] = None
     price: int
     currency: str
     duration_outbound: Optional[str] = None
